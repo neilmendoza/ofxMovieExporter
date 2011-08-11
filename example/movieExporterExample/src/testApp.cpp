@@ -4,7 +4,6 @@
 void testApp::setup()
 {
 	ofSetFrameRate(60);
-	ofBackgroundHex(0x000000);
 	testImage.loadImage("kate-1024-768.jpg");
 	movieExporter.setup();
 }
@@ -17,12 +16,20 @@ void testApp::update()
 //--------------------------------------------------------------
 void testApp::draw()
 {
+	ofSetColor(255, 255, 255);
 	testImage.draw(0, 0, ofGetWidth(), ofGetHeight());
 	ofEllipse(.5f * ofGetWidth() + 200.f * cosf(ofGetElapsedTimef()), .5f * ofGetHeight() + 200.f * sinf(ofGetElapsedTimef()), 100, 100);
 	int size = max(1000 - ofGetFrameNum(), 0);
 	ofEllipse(.5f * ofGetWidth(), .5f * ofGetHeight(), size, size);
-	ofDrawBitmapString(ofToString(ofGetFrameRate()), 10, 10);
-	ofDrawBitmapString(ofToString(ofGetElapsedTimef()), 10, 30);
+	ofSetColor(0, 255, 0);
+	ofDrawBitmapString(ofToString(ofGetFrameRate()), 10, 35);
+	ofDrawBitmapString(ofToString(ofGetElapsedTimef()), 10, 55);	
+	if (movieExporter.isRecording())
+	{
+		ofSetColor(255, 0, 0);
+		ofDrawBitmapString("Press space to stop recording", 10, 15);
+	}
+	else ofDrawBitmapString("Press space to start recording", 10, 15);
 }
 
 //--------------------------------------------------------------
