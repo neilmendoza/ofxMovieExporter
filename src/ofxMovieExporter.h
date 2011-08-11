@@ -40,6 +40,7 @@ extern "C"
     #include <avcodec.h>
     #include <avformat.h>
     #include <swscale.h>
+	#include <mathematics.h>
 }
 
 namespace Apex
@@ -57,11 +58,15 @@ namespace Apex
 		static const int OUT_W = 640;
 		static const int OUT_H = 480;
 		static const int INIT_QUEUE_SIZE = 50;
+		static const CodecID CODEC_ID = CODEC_ID_MPEG4;
 		static const string FILENAME_PREFIX;
+		static const string CONTAINER;
 
 		~ofxMovieExporter();
-
-		void setup(int outW = OUT_W, int outH = OUT_H, int bitRate = BIT_RATE, int frameRate = FRAME_RATE);
+		// tested so far with...
+		// codecId = CODEC_ID_MPEG4, container = "mp4"
+		// codecId = CODEC_ID_MPEG2VIDEO, container = "mov"
+		void setup(int outW = OUT_W, int outH = OUT_H, int bitRate = BIT_RATE, int frameRate = FRAME_RATE, CodecID codecId = CODEC_ID, string container = CONTAINER);
 		void record();
 		void stop();
 		bool isRecording() const;
@@ -80,6 +85,9 @@ namespace Apex
 		void checkFrame(ofEventArgs& args);
 		void encodeFrame();
 		void finishRecord();
+		
+		string container;
+		CodecID codecId;
 		
 		bool recording;
 		int numCaptures;

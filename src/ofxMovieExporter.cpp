@@ -35,18 +35,23 @@
 namespace Apex
 {
 	const string ofxMovieExporter::FILENAME_PREFIX = "capture";
+	const string ofxMovieExporter::CONTAINER = "mp4";
 
 	void ofxMovieExporter::setup(
 		int outW, 
 		int outH, 
 		int bitRate,
-		int frameRate)
+		int frameRate,
+		CodecID codecId,
+		string container)
 	{
 		if (outW % 2 == 1 || outH % 2 == 1) ofLogError("Resolution must be a multiple of 2");
 		
 		this->outW = outW;
 		this->outH = outH;
 		this->frameRate = frameRate;
+		this->codecId = codecId;
+		this->container = container;
 		
 		inW = ofGetWidth();
 		inH = ofGetHeight();
@@ -96,7 +101,7 @@ namespace Apex
 		initEncoder();
 
 		ostringstream oss;
-		oss << FILENAME_PREFIX << numCaptures << ".mp4";
+		oss << FILENAME_PREFIX << numCaptures << "." << container;
 		outFileName = oss.str();
 		// open the output file
 		if (url_fopen(&formatCtx->pb, ofToDataPath(outFileName).c_str(), URL_WRONLY) < 0) 
@@ -137,7 +142,7 @@ namespace Apex
 			av_freep(&formatCtx->streams[i]);
 		}
 		av_free(formatCtx);
-		//url_fclose(formatCtx->pb);
+		url_fclose(formatCtx->pb);
 	}
 
 #ifdef _THREAD_CAPTURE
@@ -215,10 +220,10 @@ namespace Apex
 			AVPacket pkt;
 			av_init_packet(&pkt);
 			//pkt.pts = av_rescale_q(codecCtx->coded_frame->pts, codecCtx->time_base, videoStream->time_base); 
-			pkt.pts = frameNum;//ofGetFrameNum();//codecCtx->coded_frame->pts;
-			pkt.dts = pkt.pts;
 			//if(codecCtx->coded_frame->key_frame) pkt.flags |= AV_PKT_FLAG_KEY;
+			pkt.pts = frameNum;//ofGetFrameNum();//codecCtx->coded_frame->pts;
 			pkt.flags |= AV_PKT_FLAG_KEY;
+			pkt.dts = pkt.pts;
 			pkt.stream_index = videoStream->index;
 			pkt.data = encodedBuf;
 			pkt.size = outSize;
@@ -254,13 +259,15 @@ namespace Apex
 	{
 		/////////////////////////////////////////////////////////////
 		// find codec
-		codec = avcodec_find_encoder(CODEC_ID_MPEG4);
+		codec = avcodec_find_encoder(codecId);
 		if (!codec) ofLogError("codec not found");
 
 		////////////////////////////////////////////////////////////
-		// auto detect the output format from the name. default is mpeg. 
-		outputFormat = av_guess_format(NULL, "amovie.mp4", NULL);
-		if (!outputFormat) ofLogError("Could not guess output container for an mp4 file (ueuur!!)");	
+		// auto detect the output format from the name. default is mpeg.
+		ostringstream oss;
+		oss << "amovie." << container;
+		outputFormat = av_guess_format(NULL, oss.str().c_str(), NULL);
+		if (!outputFormat) ofLogError("Could not guess output container for an %s file (ueuur!!)", container);	
 		// set the format codec (the format also has a default codec that can be read from it)
 		outputFormat->video_codec = codec->id;
 
