@@ -142,7 +142,7 @@ namespace Apex
 			av_freep(&formatCtx->streams[i]);
 		}
 		av_free(formatCtx);
-		url_fclose(formatCtx->pb);
+		//url_fclose(formatCtx->pb);
 	}
 
 #ifdef _THREAD_CAPTURE
