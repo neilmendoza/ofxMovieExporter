@@ -1,5 +1,0 @@
-Addon to capture and encode video straight from OF applications based on libav.
-
-To run the example, copy the movieExporterExample directory to a sub-directory of your apps folder.
-
-For documentation, please see - https://github.com/neilmendoza/ofxMovieExporter/wiki
