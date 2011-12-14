@@ -136,7 +136,6 @@
 		2865A8971498BDC600E6DBC1 /* avutil.lib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = avutil.lib; sourceTree = "<group>"; };
 		2865A8981498BDC600E6DBC1 /* postproc.lib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = postproc.lib; sourceTree = "<group>"; };
 		2865A8991498BDC600E6DBC1 /* swscale.lib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = swscale.lib; sourceTree = "<group>"; };
-		2865A89A1498BDC600E6DBC1 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		2865A89C1498BDC600E6DBC1 /* ofxMovieExporter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxMovieExporter.cpp; sourceTree = "<group>"; };
 		2865A89D1498BDC600E6DBC1 /* ofxMovieExporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxMovieExporter.h; sourceTree = "<group>"; };
 		BBAB23BE13894E4700AA2426 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = ../../../libs/glut/lib/osx/GLUT.framework; sourceTree = "<group>"; };
@@ -203,7 +202,6 @@
 			isa = PBXGroup;
 			children = (
 				2865A84B1498BDC600E6DBC1 /* libs */,
-				2865A89A1498BDC600E6DBC1 /* README */,
 				2865A89B1498BDC600E6DBC1 /* src */,
 			);
 			name = ofxMovieExporter;
