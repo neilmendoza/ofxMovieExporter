@@ -35,3 +35,4 @@ OSX binaries were compiled as LGPL.  Windows binaries were downloaded from here 
 * Add queue mechanism that doesn't involve locking
 * Add audio
 * Remove unnecessary libs - probably avdevice, avfilter, avutil and postproc
+* Fix timing issues
