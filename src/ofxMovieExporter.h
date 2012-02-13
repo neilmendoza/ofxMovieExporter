@@ -63,6 +63,8 @@ namespace Apex
 		// defaults
 		static const int BIT_RATE = 4000000;
 		static const int FRAME_RATE = 25;
+		static const int POS_X = 0;
+		static const int POS_Y = 0;
 		static const int OUT_W = 640;
 		static const int OUT_H = 480;
 		static const int INIT_QUEUE_SIZE = 50;
@@ -70,6 +72,7 @@ namespace Apex
 		static const string FILENAME_PREFIX;
 		static const string CONTAINER;
 
+		ofxMovieExporter();
 		~ofxMovieExporter();
 		// tested so far with...
 		// codecId = CODEC_ID_MPEG4, container = "mp4"
@@ -78,6 +81,15 @@ namespace Apex
 		void record(string filePrefix=FILENAME_PREFIX, string folderPath="");
 		void stop();
 		bool isRecording() const;
+
+        // set the recording area
+        // x, y is the upper left corner of the recording area, default: 0, 0
+        // w x h is the area size, default: screen width x height
+        void setRecordingArea(int x, int y, int w, int h);
+        void setRecordingArea(ofRectangle& rect);
+        
+        // get the recording area as a rectangle
+		ofRectangle getRecordingArea();
 
 	private:
 #ifdef _THREAD_CAPTURE
@@ -122,6 +134,7 @@ namespace Apex
 		AVFrame* outFrame;
 		AVFrame* encodedFrame;
 
+		int posX, posY;
 		int inW, inH;
 		int outW, outH;
 	};

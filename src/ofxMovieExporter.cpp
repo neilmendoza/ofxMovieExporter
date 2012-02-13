@@ -37,6 +37,13 @@ namespace Apex
 	const string ofxMovieExporter::FILENAME_PREFIX = "capture";
 	const string ofxMovieExporter::CONTAINER = "mp4";
 
+	ofxMovieExporter::ofxMovieExporter() {
+			posX = POS_X;
+			posY = POS_Y;
+			inW = ofGetWidth();
+			inH = ofGetHeight();
+	}
+
 	void ofxMovieExporter::setup(
 		int outW,
 		int outH,
@@ -53,8 +60,6 @@ namespace Apex
 		this->codecId = codecId;
 		this->container = container;
 
-		inW = ofGetWidth();
-		inH = ofGetHeight();
 		frameInterval = 1.f / (float)frameRate;
 
 		// HACK HACK HACK
@@ -133,6 +138,26 @@ namespace Apex
 #endif
 	}
 
+void ofxMovieExporter::setRecordingArea(int x, int y, int w, int h) {
+	posX = x;
+	posY = y;
+	inW = w;
+	inH = h;
+}
+
+void ofxMovieExporter::setRecordingArea(ofRectangle& rect) {
+	posX = rect.x;
+	posY = rect.y;
+	inW = rect.width;
+	inH = rect.height;
+}
+		
+ofRectangle ofxMovieExporter::getRecordingArea() {
+	return ofRectangle(posX, posY, inW, inH);
+}
+		
+// PRIVATE
+
 	void ofxMovieExporter::finishRecord()
 	{
 		av_write_trailer(formatCtx);
@@ -192,13 +217,23 @@ namespace Apex
 			}
 			else pixels = new unsigned char[inW * inH * 3];
 
-			glReadPixels(0, 0, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+			// this part from ofImage::saveScreen
+			int screenHeight =	ofGetViewportHeight(); // if we are in a FBO or other viewport, this fails: ofGetHeight();
+			int screenY = screenHeight - posY;
+			screenY -= inH; // top, bottom issues
+			
+			glReadPixels(posX, screenY, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
 			frameQueueMutex.lock();
 			frameQueue.push_back(pixels);
 			frameQueueMutex.unlock();
 #else
-			glReadPixels(0, 0, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, inPixels);
+			// this part from ofImage::saveScreen
+			int screenHeight =	ofGetViewportHeight(); // if we are in a FBO or other viewport, this fails: ofGetHeight();
+			int screenY = screenHeight - posY;
+			screenY -= inH; // top, bottom issues
+			
+			glReadPixels(posX, screenY, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, inPixels);
 			encodeFrame();
 #endif
 			lastFrameTime = ofGetElapsedTimef();
