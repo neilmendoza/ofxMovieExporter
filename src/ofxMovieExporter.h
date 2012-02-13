@@ -36,9 +36,11 @@
 #include "ofMain.h"
 
 // needed for gcc on win
-#ifndef INT64_C
-    #define INT64_C(c) (c ## LL)
-    #define UINT64_C(c) (c ## ULL)
+#ifdef TARGET_WIN32
+    #ifndef INT64_C
+        #define INT64_C(c) (c ## LL)
+        #define UINT64_C(c) (c ## ULL)
+    #endif
 #endif
 
 extern "C"
