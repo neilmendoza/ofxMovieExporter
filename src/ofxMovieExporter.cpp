@@ -2,31 +2,31 @@
  *  ofxMovieExporter.cpp
  *
  *  Copyright (c) 2011, Neil Mendoza, http://www.neilmendoza.com
- *  All rights reserved. 
- *  
- *  Redistribution and use in source and binary forms, with or without 
- *  modification, are permitted provided that the following conditions are met: 
- *  
- *  * Redistributions of source code must retain the above copyright notice, 
- *    this list of conditions and the following disclaimer. 
- *  * Redistributions in binary form must reproduce the above copyright 
- *    notice, this list of conditions and the following disclaimer in the 
- *    documentation and/or other materials provided with the distribution. 
- *  * Neither the name of 16b.it nor the names of its contributors may be used 
- *    to endorse or promote products derived from this software without 
- *    specific prior written permission. 
- *  
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
- *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
- *  POSSIBILITY OF SUCH DAMAGE. 
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
+ *
+ *  * Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *  * Neither the name of 16b.it nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
  *
  */
 #include "ofxMovieExporter.h"
@@ -38,21 +38,21 @@ namespace Apex
 	const string ofxMovieExporter::CONTAINER = "mp4";
 
 	void ofxMovieExporter::setup(
-		int outW, 
-		int outH, 
+		int outW,
+		int outH,
 		int bitRate,
 		int frameRate,
 		CodecID codecId,
 		string container)
 	{
 		if (outW % 2 == 1 || outH % 2 == 1) ofLogError("Resolution must be a multiple of 2");
-		
+
 		this->outW = outW;
 		this->outH = outH;
 		this->frameRate = frameRate;
 		this->codecId = codecId;
 		this->container = container;
-		
+
 		inW = ofGetWidth();
 		inH = ofGetHeight();
 		frameInterval = 1.f / (float)frameRate;
@@ -75,7 +75,7 @@ namespace Apex
 	ofxMovieExporter::~ofxMovieExporter()
 	{
 		if (recording) finishRecord();
-		
+
 		// allocate input stuff
 #ifdef _THREAD_CAPTURE
 		stopThread();
@@ -96,17 +96,20 @@ namespace Apex
 		av_free(outPixels);
 	}
 
-	void ofxMovieExporter::record()
+	void ofxMovieExporter::record(string filePrefix, string folderPath)
 	{
 		initEncoder();
 
 		ostringstream oss;
-		oss << FILENAME_PREFIX << numCaptures << "." << container;
+		oss << folderPath;
+		if(folderPath != "")
+            oss << "/";
+		oss << filePrefix << numCaptures << "." << container;
 		outFileName = oss.str();
 		// open the output file
-		if (url_fopen(&formatCtx->pb, ofToDataPath(outFileName).c_str(), URL_WRONLY) < 0) 
-			ofLogError("Could not open file");
-		
+		if (url_fopen(&formatCtx->pb, ofToDataPath(outFileName).c_str(), URL_WRONLY) < 0)
+			ofLogError("Could not open file %s", ofToDataPath(outFileName).c_str());
+
 		ofAddListener(ofEvents.draw, this, &ofxMovieExporter::checkFrame);
 
 		// write the stream header, if any
@@ -157,7 +160,7 @@ namespace Apex
 				inPixels = frameQueue.front();
 				frameQueue.pop_front();
 				frameQueueMutex.unlock();
-				
+
 				encodeFrame();
 
 				frameMemMutex.lock();
@@ -173,7 +176,7 @@ namespace Apex
 		}
 	}
 #endif
-	
+
 	void ofxMovieExporter::checkFrame(ofEventArgs& args)
 	{
 		if (ofGetElapsedTimef() - lastFrameTime >= frameInterval)
@@ -188,9 +191,9 @@ namespace Apex
 				frameMemMutex.unlock();
 			}
 			else pixels = new unsigned char[inW * inH * 3];
-			
+
 			glReadPixels(0, 0, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-			
+
 			frameQueueMutex.lock();
 			frameQueue.push_back(pixels);
 			frameQueueMutex.unlock();
@@ -219,7 +222,7 @@ namespace Apex
 		{
 			AVPacket pkt;
 			av_init_packet(&pkt);
-			//pkt.pts = av_rescale_q(codecCtx->coded_frame->pts, codecCtx->time_base, videoStream->time_base); 
+			//pkt.pts = av_rescale_q(codecCtx->coded_frame->pts, codecCtx->time_base, videoStream->time_base);
 			//if(codecCtx->coded_frame->key_frame) pkt.flags |= AV_PKT_FLAG_KEY;
 			pkt.pts = frameNum;//ofGetFrameNum();//codecCtx->coded_frame->pts;
 			pkt.flags |= AV_PKT_FLAG_KEY;
@@ -267,7 +270,7 @@ namespace Apex
 		ostringstream oss;
 		oss << "amovie." << container;
 		outputFormat = av_guess_format(NULL, oss.str().c_str(), NULL);
-		if (!outputFormat) ofLogError("Could not guess output container for an %s file (ueuur!!)", container);	
+		if (!outputFormat) ofLogError("Could not guess output container for an %s file (ueuur!!)", container);
 		// set the format codec (the format also has a default codec that can be read from it)
 		outputFormat->video_codec = codec->id;
 
@@ -280,7 +283,7 @@ namespace Apex
 		/////////////////////////////////////////////////////////////
 		// set up the video stream
 		videoStream = av_new_stream(formatCtx, 0);
-	
+
 		/////////////////////////////////////////////////////////////
 		// init codec context
 		codecCtx = videoStream->codec;
@@ -298,8 +301,8 @@ namespace Apex
 
 		if (codecCtx->codec_id == CODEC_ID_MPEG1VIDEO)
 		{
-			/* needed to avoid using macroblocks in which some coeffs overflow 
-			 this doesnt happen with normal video, it just happens here as the 
+			/* needed to avoid using macroblocks in which some coeffs overflow
+			 this doesnt happen with normal video, it just happens here as the
 			 motion of the chroma plane doesnt match the luma plane */
 			codecCtx->mb_decision=2;
 		}
@@ -309,7 +312,7 @@ namespace Apex
 
 		// set the output parameters (must be done even if no parameters).
 		if (av_set_parameters(formatCtx, NULL) < 0)	ofLogError("Could not set format parameters");
-		
+
 		// open codec
 		if (avcodec_open(codecCtx, codec) < 0) ofLogError("Could not open codec");
 	}

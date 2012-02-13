@@ -75,7 +75,7 @@ namespace Apex
 		// codecId = CODEC_ID_MPEG4, container = "mp4"
 		// codecId = CODEC_ID_MPEG2VIDEO, container = "mov"
 		void setup(int outW = OUT_W, int outH = OUT_H, int bitRate = BIT_RATE, int frameRate = FRAME_RATE, CodecID codecId = CODEC_ID, string container = CONTAINER);
-		void record();
+		void record(string filePrefix=FILENAME_PREFIX, string folderPath="");
 		void stop();
 		bool isRecording() const;
 
