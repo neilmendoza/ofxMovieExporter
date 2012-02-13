@@ -38,10 +38,7 @@ namespace Apex
 	const string ofxMovieExporter::CONTAINER = "mp4";
 
 	ofxMovieExporter::ofxMovieExporter() {
-			posX = POS_X;
-			posY = POS_Y;
-			inW = ofGetWidth();
-			inH = ofGetHeight();
+			resetRecordingArea();
 	}
 
 	void ofxMovieExporter::setup(
@@ -151,7 +148,14 @@ void ofxMovieExporter::setRecordingArea(ofRectangle& rect) {
 	inW = rect.width;
 	inH = rect.height;
 }
-		
+
+void ofxMovieExporter::resetRecordingArea() {
+	posX = 0;
+	posY = 0;
+	inW = ofGetViewportWidth();
+	inH = ofGetViewportHeight();
+}
+
 ofRectangle ofxMovieExporter::getRecordingArea() {
 	return ofRectangle(posX, posY, inW, inH);
 }

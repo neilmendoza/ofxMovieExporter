@@ -63,8 +63,6 @@ namespace Apex
 		// defaults
 		static const int BIT_RATE = 4000000;
 		static const int FRAME_RATE = 25;
-		static const int POS_X = 0;
-		static const int POS_Y = 0;
 		static const int OUT_W = 640;
 		static const int OUT_H = 480;
 		static const int INIT_QUEUE_SIZE = 50;
@@ -87,6 +85,9 @@ namespace Apex
         // w x h is the area size, default: screen width x height
         void setRecordingArea(int x, int y, int w, int h);
         void setRecordingArea(ofRectangle& rect);
+        
+        // reset the recording area to the size of the current screen (or FBO, etc)
+        void resetRecordingArea();
         
         // get the recording area as a rectangle
 		ofRectangle getRecordingArea();
