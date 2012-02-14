@@ -50,7 +50,7 @@ namespace Apex
 		CodecID codecId,
 		string container)
 	{
-		if (outW % 2 == 1 || outH % 2 == 1) ofLogError("Resolution must be a multiple of 2");
+		if (outW % 2 == 1 || outH % 2 == 1) ofLog(OF_LOG_ERROR, "ofxMovieExporter: Resolution must be a multiple of 2");
 
 		this->outW = outW;
 		this->outH = outH;
@@ -111,7 +111,7 @@ namespace Apex
 		outFileName = oss.str();
 		// open the output file
 		if (url_fopen(&formatCtx->pb, ofToDataPath(outFileName).c_str(), URL_WRONLY) < 0)
-			ofLogError("Could not open file %s", ofToDataPath(outFileName).c_str());
+			ofLog(OF_LOG_ERROR, "ofxMovieExporter: Could not open file %s", ofToDataPath(outFileName).c_str());
 
 		ofAddListener(ofEvents.draw, this, &ofxMovieExporter::checkFrame);
 
@@ -136,34 +136,40 @@ namespace Apex
 #endif
 	}
 
-	void ofxMovieExporter::setRecordingArea(int x, int y, int w, int h) {
+	void ofxMovieExporter::setRecordingArea(int x, int y, int w, int h)
+	{
 		posX = x;
 		posY = y;
 		inW = w;
 		inH = h;
 	}
 
-	void ofxMovieExporter::setRecordingArea(ofRectangle& rect) {
+	void ofxMovieExporter::setRecordingArea(ofRectangle& rect)
+	{
 		posX = rect.x;
 		posY = rect.y;
 		inW = rect.width;
 		inH = rect.height;
 	}
 
-	void ofxMovieExporter::resetRecordingArea() {
+	void ofxMovieExporter::resetRecordingArea()
+	{
 		posX = 0;
 		posY = 0;
 		inW = ofGetViewportWidth();
 		inH = ofGetViewportHeight();
 	}
 
-	ofRectangle ofxMovieExporter::getRecordingArea() {
+	ofRectangle ofxMovieExporter::getRecordingArea()
+	{
 		return ofRectangle(posX, posY, inW, inH);
 	}
 
-	void ofxMovieExporter::setPixelSource(unsigned char* pixels, int w, int h) {
-		if(pixels == NULL) {
-			ofLog(OF_LOG_ERROR, "ofxMovieExporter: couldn't set NULL pixel source");
+	void ofxMovieExporter::setPixelSource(unsigned char* pixels, int w, int h)
+	{
+		if (pixels == NULL)
+		{
+			ofLog(OF_LOG_ERROR, "ofxMovieExporter: Could not set NULL pixel source");
 			return;
 		}
 		pixelSource = pixels;
@@ -172,7 +178,8 @@ namespace Apex
 		usePixelSource = true;
 	}
 
-	void ofxMovieExporter::resetPixelSource() {
+	void ofxMovieExporter::resetPixelSource()
+	{
 		usePixelSource = false;
 		pixelSource = NULL;
 		inW = ofGetViewportWidth();
@@ -231,18 +238,20 @@ namespace Apex
 		{
 #ifdef _THREAD_CAPTURE
 			unsigned char* pixels;
-			if(!frameMem.empty())
+			if (!frameMem.empty())
 			{
 				frameMemMutex.lock();
 				pixels = frameMem.back();
 				frameMem.pop_back();
 				frameMemMutex.unlock();
 			}
-			else {
+			else
+			{
 				pixels = new unsigned char[inW * inH * 3];
 			}
 			
-			if(!usePixelSource) {
+			if (!usePixelSource)
+			{
 				// this part from ofImage::saveScreen
 				int screenHeight =	ofGetViewportHeight(); // if we are in a FBO or other viewport, this fails: ofGetHeight();
 				int screenY = screenHeight - posY;
@@ -250,7 +259,8 @@ namespace Apex
 				
 				glReadPixels(posX, screenY, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 			}
-			else {
+			else
+			{
 				memcpy(pixels, pixelSource, inW * inH * 3);
 			}
 			
@@ -258,7 +268,7 @@ namespace Apex
 			frameQueue.push_back(pixels);
 			frameQueueMutex.unlock();
 #else
-			if(!usePixelSource) {
+			if (!usePixelSource) {
 				// this part from ofImage::saveScreen
 				int screenHeight =	ofGetViewportHeight(); // if we are in a FBO or other viewport, this fails: ofGetHeight();
 				int screenY = screenHeight - posY;
@@ -266,7 +276,8 @@ namespace Apex
 				
 				glReadPixels(posX, screenY, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, inPixels);
 			}
-			else {
+			else
+			{
 				memcpy(inPixels, pixelSource, inW * inH * 3);
 			}
 			encodeFrame();
@@ -282,7 +293,8 @@ namespace Apex
 		avpicture_fill((AVPicture*)outFrame, outPixels, PIX_FMT_YUV420P, outW, outH);
 
 		// intentionally flip the image to compensate for OF flipping if reading from the screen
-		if(!usePixelSource) {
+		if (!usePixelSource)
+		{
 			inFrame->data[0] += inFrame->linesize[0] * (inH - 1);
 			inFrame->linesize[0] = -inFrame->linesize[0];
 		}
@@ -336,21 +348,21 @@ namespace Apex
 		/////////////////////////////////////////////////////////////
 		// find codec
 		codec = avcodec_find_encoder(codecId);
-		if (!codec) ofLogError("codec not found");
+		if (!codec) ofLog(OF_LOG_ERROR, "ofxMovieExporter: Codec not found");
 
 		////////////////////////////////////////////////////////////
 		// auto detect the output format from the name. default is mpeg.
 		ostringstream oss;
 		oss << "amovie." << container;
 		outputFormat = av_guess_format(NULL, oss.str().c_str(), NULL);
-		if (!outputFormat) ofLogError("Could not guess output container for an %s file (ueuur!!)", container);
+		if (!outputFormat) ofLog(OF_LOG_ERROR, "ofxMovieExporter: Could not guess output container for an %s file (ueuur!!)", container);
 		// set the format codec (the format also has a default codec that can be read from it)
 		outputFormat->video_codec = codec->id;
 
 		/////////////////////////////////////////////////////////////
 		// allocate the format context
 		formatCtx = avformat_alloc_context();
-		if (!formatCtx) ofLogError("Could not allocate format context");
+		if (!formatCtx) ofLog(OF_LOG_ERROR, "ofxMovieExporter: Could not allocate format context");
 		formatCtx->oformat = outputFormat;
 
 		/////////////////////////////////////////////////////////////
@@ -384,9 +396,9 @@ namespace Apex
 			codecCtx->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
 		// set the output parameters (must be done even if no parameters).
-		if (av_set_parameters(formatCtx, NULL) < 0)	ofLogError("Could not set format parameters");
+		if (av_set_parameters(formatCtx, NULL) < 0)	ofLog(OF_LOG_ERROR, "ofxMovieExproter: Could not set format parameters");
 
 		// open codec
-		if (avcodec_open(codecCtx, codec) < 0) ofLogError("Could not open codec");
+		if (avcodec_open(codecCtx, codec) < 0) ofLog(OF_LOG_ERROR, "ofxMovieExproter: Could not open codec");
 	}
 }
