@@ -82,15 +82,23 @@ namespace Apex
 
         // set the recording area
         // x, y is the upper left corner of the recording area, default: 0, 0
-        // w x h is the area size, default: screen width x height
+        // w x h is the area size, default: viewport width x height
         void setRecordingArea(int x, int y, int w, int h);
         void setRecordingArea(ofRectangle& rect);
         
-        // reset the recording area to the size of the current screen (or FBO, etc)
+        // reset the recording area to the size of the current viewport (screen, FBO, etc)
         void resetRecordingArea();
         
         // get the recording area as a rectangle
 		ofRectangle getRecordingArea();
+		
+		// set an external pixel source, assumes 3 Byte RGB
+		// also sets the recording size but does not crop to the recording area
+		void setPixelSource(unsigned char* pixels, int w, int h);
+		
+		// reset the pixel source and record from the screen
+		// also resets the recording size to the viewport width
+		void resetPixelSource();
 
 	private:
 #ifdef _THREAD_CAPTURE
@@ -138,6 +146,9 @@ namespace Apex
 		int posX, posY;
 		int inW, inH;
 		int outW, outH;
+		
+		bool usePixelSource;
+		unsigned char* pixelSource;
 	};
 
 	inline bool ofxMovieExporter::isRecording() const { return recording; }

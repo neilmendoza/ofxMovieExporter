@@ -39,6 +39,7 @@ namespace Apex
 
 	ofxMovieExporter::ofxMovieExporter() {
 			resetRecordingArea();
+			resetPixelSource();
 	}
 
 	void ofxMovieExporter::setup(
@@ -80,7 +81,7 @@ namespace Apex
 
 		// allocate input stuff
 #ifdef _THREAD_CAPTURE
-		stopThread();
+		stopThread(true);
 		for (int i = 0; i < frameMem.size(); i++)
 		{
 			delete[] frameMem[i];
@@ -135,30 +136,48 @@ namespace Apex
 #endif
 	}
 
-void ofxMovieExporter::setRecordingArea(int x, int y, int w, int h) {
-	posX = x;
-	posY = y;
-	inW = w;
-	inH = h;
-}
+	void ofxMovieExporter::setRecordingArea(int x, int y, int w, int h) {
+		posX = x;
+		posY = y;
+		inW = w;
+		inH = h;
+	}
 
-void ofxMovieExporter::setRecordingArea(ofRectangle& rect) {
-	posX = rect.x;
-	posY = rect.y;
-	inW = rect.width;
-	inH = rect.height;
-}
+	void ofxMovieExporter::setRecordingArea(ofRectangle& rect) {
+		posX = rect.x;
+		posY = rect.y;
+		inW = rect.width;
+		inH = rect.height;
+	}
 
-void ofxMovieExporter::resetRecordingArea() {
-	posX = 0;
-	posY = 0;
-	inW = ofGetViewportWidth();
-	inH = ofGetViewportHeight();
-}
+	void ofxMovieExporter::resetRecordingArea() {
+		posX = 0;
+		posY = 0;
+		inW = ofGetViewportWidth();
+		inH = ofGetViewportHeight();
+	}
 
-ofRectangle ofxMovieExporter::getRecordingArea() {
-	return ofRectangle(posX, posY, inW, inH);
-}
+	ofRectangle ofxMovieExporter::getRecordingArea() {
+		return ofRectangle(posX, posY, inW, inH);
+	}
+
+	void ofxMovieExporter::setPixelSource(unsigned char* pixels, int w, int h) {
+		if(pixels == NULL) {
+			ofLog(OF_LOG_ERROR, "ofxMovieExporter: couldn't set NULL pixel source");
+			return;
+		}
+		pixelSource = pixels;
+		inW = w;
+		inH = h;
+		usePixelSource = true;
+	}
+
+	void ofxMovieExporter::resetPixelSource() {
+		usePixelSource = false;
+		pixelSource = NULL;
+		inW = ofGetViewportWidth();
+		inH = ofGetViewportHeight();
+	}
 		
 // PRIVATE
 
@@ -200,7 +219,7 @@ ofRectangle ofxMovieExporter::getRecordingArea() {
 			else if (!recording)
 			{
 				finishRecord();
-				stopThread();
+				stopThread(true);
 			}
 		}
 	}
@@ -212,32 +231,44 @@ ofRectangle ofxMovieExporter::getRecordingArea() {
 		{
 #ifdef _THREAD_CAPTURE
 			unsigned char* pixels;
-			if (!frameMem.empty())
+			if(!frameMem.empty())
 			{
 				frameMemMutex.lock();
 				pixels = frameMem.back();
 				frameMem.pop_back();
 				frameMemMutex.unlock();
 			}
-			else pixels = new unsigned char[inW * inH * 3];
-
-			// this part from ofImage::saveScreen
-			int screenHeight =	ofGetViewportHeight(); // if we are in a FBO or other viewport, this fails: ofGetHeight();
-			int screenY = screenHeight - posY;
-			screenY -= inH; // top, bottom issues
+			else {
+				pixels = new unsigned char[inW * inH * 3];
+			}
 			
-			glReadPixels(posX, screenY, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-
+			if(!usePixelSource) {
+				// this part from ofImage::saveScreen
+				int screenHeight =	ofGetViewportHeight(); // if we are in a FBO or other viewport, this fails: ofGetHeight();
+				int screenY = screenHeight - posY;
+				screenY -= inH; // top, bottom issues
+				
+				glReadPixels(posX, screenY, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+			}
+			else {
+				memcpy(pixels, pixelSource, inW * inH * 3);
+			}
+			
 			frameQueueMutex.lock();
 			frameQueue.push_back(pixels);
 			frameQueueMutex.unlock();
 #else
-			// this part from ofImage::saveScreen
-			int screenHeight =	ofGetViewportHeight(); // if we are in a FBO or other viewport, this fails: ofGetHeight();
-			int screenY = screenHeight - posY;
-			screenY -= inH; // top, bottom issues
-			
-			glReadPixels(posX, screenY, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, inPixels);
+			if(!usePixelSource) {
+				// this part from ofImage::saveScreen
+				int screenHeight =	ofGetViewportHeight(); // if we are in a FBO or other viewport, this fails: ofGetHeight();
+				int screenY = screenHeight - posY;
+				screenY -= inH; // top, bottom issues
+				
+				glReadPixels(posX, screenY, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, inPixels);
+			}
+			else {
+				memcpy(inPixels, pixelSource, inW * inH * 3);
+			}
 			encodeFrame();
 #endif
 			lastFrameTime = ofGetElapsedTimef();
@@ -246,13 +277,16 @@ ofRectangle ofxMovieExporter::getRecordingArea() {
 
 	void ofxMovieExporter::encodeFrame()
 	{
+		
 		avpicture_fill((AVPicture*)inFrame, inPixels, PIX_FMT_RGB24, inW, inH);
 		avpicture_fill((AVPicture*)outFrame, outPixels, PIX_FMT_YUV420P, outW, outH);
 
-		// intentionally flip the image to compensate for OF flipping
-		inFrame->data[0] += inFrame->linesize[0] * (inH - 1);
-		inFrame->linesize[0] = -inFrame->linesize[0];
-
+		// intentionally flip the image to compensate for OF flipping if reading from the screen
+		if(!usePixelSource) {
+			inFrame->data[0] += inFrame->linesize[0] * (inH - 1);
+			inFrame->linesize[0] = -inFrame->linesize[0];
+		}
+		
 		//perform the conversion for RGB to YUV and size
 		sws_scale(convertCtx, inFrame->data, inFrame->linesize, 0, inH, outFrame->data, outFrame->linesize);
 
