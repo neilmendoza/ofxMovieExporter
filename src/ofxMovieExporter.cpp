@@ -109,7 +109,6 @@ namespace Apex
             oss << "/";
 		oss << filePrefix << numCaptures << "." << container;
 		outFileName = oss.str();
-		cout << "started " << oss.str() << endl;
 		// open the output file
 		if (url_fopen(&formatCtx->pb, ofToDataPath(outFileName).c_str(), URL_WRONLY) < 0)
 			ofLog(OF_LOG_ERROR, "ofxMovieExporter: Could not open file %s", ofToDataPath(outFileName).c_str());
