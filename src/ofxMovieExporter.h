@@ -99,6 +99,12 @@ namespace Apex
 		// reset the pixel source and record from the screen
 		// also resets the recording size to the viewport width
 		void resetPixelSource();
+		
+		// get the number files that have been captured so far
+		int getNumCaptures();
+		
+		// reset the filename counter back to 0
+		void resetNumCaptures();
 
 	private:
 #ifdef _THREAD_CAPTURE

@@ -109,6 +109,7 @@ namespace Apex
             oss << "/";
 		oss << filePrefix << numCaptures << "." << container;
 		outFileName = oss.str();
+
 		// open the output file
 		if (url_fopen(&formatCtx->pb, ofToDataPath(outFileName).c_str(), URL_WRONLY) < 0)
 			ofLog(OF_LOG_ERROR, "ofxMovieExporter: Could not open file %s", ofToDataPath(outFileName).c_str());
@@ -184,6 +185,14 @@ namespace Apex
 		pixelSource = NULL;
 		inW = ofGetViewportWidth();
 		inH = ofGetViewportHeight();
+	}
+		
+	int ofxMovieExporter::getNumCaptures() {
+		return numCaptures;
+	}
+	
+	void ofxMovieExporter::resetNumCaptures() {
+		numCaptures = 0;
 	}
 		
 // PRIVATE
