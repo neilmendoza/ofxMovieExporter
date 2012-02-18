@@ -38,8 +38,30 @@ namespace Apex
 	const string ofxMovieExporter::CONTAINER = "mp4";
 
 	ofxMovieExporter::ofxMovieExporter() {
-			resetRecordingArea();
-			resetPixelSource();
+		outputFormat = NULL;
+		formatCtx = NULL;
+		videoStream = NULL;
+		
+		codec = NULL;
+		codecCtx = NULL;
+		convertCtx = NULL;
+		
+		inPixels = NULL;
+		outPixels = NULL;
+		encodedBuf = NULL;
+
+		inFrame = NULL;
+		outFrame = NULL;
+
+		posX = 0;
+		posY = 0;
+		inW = ofGetWidth();
+		inH = ofGetHeight();
+		outW = ofGetWidth();
+		outH = ofGetHeight();
+		
+		bool usePixelSource = false;
+		pixelSource = NULL;
 	}
 
 	void ofxMovieExporter::setup(
@@ -55,6 +77,7 @@ namespace Apex
 		this->outW = outW;
 		this->outH = outH;
 		this->frameRate = frameRate;
+		this->bitRate = bitRate;
 		this->codecId = codecId;
 		this->container = container;
 
@@ -71,7 +94,6 @@ namespace Apex
 		av_register_all();
 		convertCtx = sws_getContext(inW, inH, PIX_FMT_RGB24, outW, outH, PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
 
-		// allocate memory
 		allocateMemory();
 	}
 
@@ -79,24 +101,8 @@ namespace Apex
 	{
 		if (recording) finishRecord();
 
-		// allocate input stuff
-#ifdef _THREAD_CAPTURE
 		stopThread(true);
-		for (int i = 0; i < frameMem.size(); i++)
-		{
-			delete[] frameMem[i];
-		}
-		for (int i = 0; i < frameQueue.size(); i++)
-		{
-			delete[] frameQueue[i];
-		}
-#else
-		delete[] inPixels;
-#endif
-		av_free(inFrame);
-		av_free(outFrame);
-		av_free(encodedBuf);
-		av_free(outPixels);
+		clearMemory();
 	}
 
 	void ofxMovieExporter::record(string filePrefix, string folderPath)
@@ -168,6 +174,9 @@ namespace Apex
 
 	void ofxMovieExporter::setPixelSource(unsigned char* pixels, int w, int h)
 	{
+		if (isRecording())
+			stop();
+			
 		if (pixels == NULL)
 		{
 			ofLog(OF_LOG_ERROR, "ofxMovieExporter: Could not set NULL pixel source");
@@ -177,6 +186,9 @@ namespace Apex
 		inW = w;
 		inH = h;
 		usePixelSource = true;
+		
+		// resetup encoder etc
+		setup(outW, outH, bitRate, frameRate, codecId, container);
 	}
 
 	void ofxMovieExporter::resetPixelSource()
@@ -185,13 +197,18 @@ namespace Apex
 		pixelSource = NULL;
 		inW = ofGetViewportWidth();
 		inH = ofGetViewportHeight();
+		
+		// resetup encoder etc
+		setup(outW, outH, bitRate, frameRate, codecId, container);
 	}
 		
-	int ofxMovieExporter::getNumCaptures() {
+	int ofxMovieExporter::getNumCaptures()
+	{
 		return numCaptures;
 	}
 	
-	void ofxMovieExporter::resetNumCaptures() {
+	void ofxMovieExporter::resetNumCaptures()
+	{
 		numCaptures = 0;
 	}
 		
@@ -209,6 +226,7 @@ namespace Apex
 			av_freep(&formatCtx->streams[i]);
 		}
 		av_free(formatCtx);
+		formatCtx = NULL;
 		//url_fclose(formatCtx->pb);
 	}
 
@@ -266,7 +284,7 @@ namespace Apex
 				int screenY = screenHeight - posY;
 				screenY -= inH; // top, bottom issues
 				
-				glReadPixels(posX, screenY, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+		 		glReadPixels(posX, screenY, inW, inH, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 			}
 			else
 			{
@@ -331,6 +349,10 @@ namespace Apex
 
 	void ofxMovieExporter::allocateMemory()
 	{
+		// clear if we need to reallocate
+		if(inPixels)
+			clearMemory();
+		
 		// allocate input stuff
 #ifdef _THREAD_CAPTURE
 		//unsigned char* initFrameMem = new unsigned char[inW * inH * 3 * INIT_QUEUE_SIZE];
@@ -350,6 +372,33 @@ namespace Apex
 		outFrame = avcodec_alloc_frame();
 
 		encodedBuf = (unsigned char*)av_malloc(ENCODED_FRAME_BUFFER_SIZE);
+	}
+
+	void ofxMovieExporter::clearMemory() {
+		// clear input stuff
+#ifdef _THREAD_CAPTURE
+		for (int i = 0; i < frameMem.size(); i++)
+		{
+			delete[] frameMem[i];
+		}
+		for (int i = 0; i < frameQueue.size(); i++)
+		{
+			delete[] frameQueue[i];
+		}
+#else
+		delete[] inPixels;
+#endif
+		inPixels = NULL;
+		
+		av_free(inFrame);
+		av_free(outFrame);
+		av_free(encodedBuf);
+		av_free(outPixels);
+
+		inFrame = NULL;
+		outFrame = NULL;
+		encodedBuf = NULL;
+		outPixels = NULL;
 	}
 
 	void ofxMovieExporter::initEncoder()
@@ -381,7 +430,7 @@ namespace Apex
 		/////////////////////////////////////////////////////////////
 		// init codec context
 		codecCtx = videoStream->codec;
-		codecCtx->bit_rate = BIT_RATE;
+		codecCtx->bit_rate = bitRate;
 		codecCtx->width = outW;
 		codecCtx->height = outH;
 

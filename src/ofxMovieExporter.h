@@ -105,6 +105,10 @@ namespace Apex
 		
 		// reset the filename counter back to 0
 		void resetNumCaptures();
+		
+		// get the recording size
+		inline int getRecordingWidth() 	{return outW;}
+		inline int getRecordingHeight() {return outH;}
 
 	private:
 #ifdef _THREAD_CAPTURE
@@ -116,6 +120,7 @@ namespace Apex
 #endif
 		void initEncoder();
 		void allocateMemory();
+		void clearMemory();
 
 		void checkFrame(ofEventArgs& args);
 		void encodeFrame();
@@ -127,6 +132,7 @@ namespace Apex
 		bool recording;
 		int numCaptures;
 		int frameRate;
+		int bitRate;
 		float frameInterval;
 		float lastFrameTime;
 		int frameNum;
@@ -147,7 +153,6 @@ namespace Apex
 
 		AVFrame* inFrame;
 		AVFrame* outFrame;
-		AVFrame* encodedFrame;
 
 		int posX, posY;
 		int inW, inH;
