@@ -32,7 +32,7 @@
 #include "ofxMovieExporter.h"
 #include "ofThread.h"
 
-namespace Apex
+namespace itg
 {
 	const string ofxMovieExporter::FILENAME_PREFIX = "capture";
 	const string ofxMovieExporter::CONTAINER = "mp4";
@@ -413,7 +413,7 @@ namespace Apex
 		ostringstream oss;
 		oss << "amovie." << container;
 		outputFormat = av_guess_format(NULL, oss.str().c_str(), NULL);
-		if (!outputFormat) ofLog(OF_LOG_ERROR, "ofxMovieExporter: Could not guess output container for an %s file (ueuur!!)", container);
+		if (!outputFormat) ofLog(OF_LOG_ERROR, "ofxMovieExporter: Could not guess output container for an %s file (ueuur!!)", container.c_str());
 		// set the format codec (the format also has a default codec that can be read from it)
 		outputFormat->video_codec = codec->id;
 

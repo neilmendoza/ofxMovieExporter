@@ -51,7 +51,7 @@ extern "C"
 	#include <mathematics.h>
 }
 
-namespace Apex
+namespace itg
 {
 	class ofxMovieExporter
 #ifdef _THREAD_CAPTURE
@@ -164,3 +164,5 @@ namespace Apex
 
 	inline bool ofxMovieExporter::isRecording() const { return recording; }
 }
+
+namespace Apex = itg;
