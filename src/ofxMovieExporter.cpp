@@ -101,7 +101,7 @@ namespace itg
 	{
 		if (recording) finishRecord();
 
-		stopThread(true);
+		stopThread();
 		clearMemory();
 	}
 
@@ -120,7 +120,7 @@ namespace itg
 		if (url_fopen(&formatCtx->pb, ofToDataPath(outFileName).c_str(), URL_WRONLY) < 0)
 			ofLog(OF_LOG_ERROR, "ofxMovieExporter: Could not open file %s", ofToDataPath(outFileName).c_str());
 
-		ofAddListener(ofEvents.draw, this, &ofxMovieExporter::checkFrame);
+		ofAddListener(ofEvents().draw, this, &ofxMovieExporter::checkFrame);
 
 		// write the stream header, if any
 		av_write_header(formatCtx);
@@ -135,7 +135,7 @@ namespace itg
 
 	void ofxMovieExporter::stop()
 	{
-		ofRemoveListener(ofEvents.draw, this, &ofxMovieExporter::checkFrame);
+		ofRemoveListener(ofEvents().draw, this, &ofxMovieExporter::checkFrame);
 		recording = false;
 		numCaptures++;
 #ifndef _THREAD_CAPTURE
@@ -253,7 +253,7 @@ namespace itg
 			else if (!recording)
 			{
 				finishRecord();
-				stopThread(true);
+				stopThread();
 			}
 		}
 	}
